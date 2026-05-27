@@ -317,8 +317,7 @@ function StepperUploadView({ onUploadComplete }) {
   // Local Node Connection states
   const [nodeOnline, setNodeOnline] = useState(false);
   const [checkingNode, setCheckingNode] = useState(true);
-  const [hasAutoLaunched, setHasAutoLaunched] = useState(false);
-  const [launchFailed, setLaunchFailed] = useState(false);
+  const [cmdCopied, setCmdCopied] = useState(false);
   const [nodePort, setNodePort] = useState(() => {
     const saved = localStorage.getItem('dropvault_node_url');
     if (saved) {
@@ -337,47 +336,7 @@ function StepperUploadView({ onUploadComplete }) {
     }
   };
 
-  const launchLocalNode = () => {
-    setLaunchFailed(false);
-    const protocolUrl = `dropvault://launch?port=${nodePort}&t=${Date.now()}`;
-    
-    // Use a temporary hidden iframe to trigger the protocol
-    // This bypasses the browser's cached "block" for window.location.href
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    
-    // Try iframe navigation first
-    try {
-      iframe.contentWindow.location.href = protocolUrl;
-    } catch (e) {
-      // Fallback: use window.open with a brief window
-      const w = window.open(protocolUrl, '_blank');
-      if (w) {
-        setTimeout(() => w.close(), 500);
-      }
-    }
-    
-    // Clean up iframe after a short delay
-    setTimeout(() => {
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }, 2000);
 
-    toast.showToast('Launching DropVault Node...');
-    
-    // Start verification timer to detect if launch is blocked/cancelled
-    setTimeout(() => {
-      setNodeOnline(online => {
-        if (!online) {
-          setLaunchFailed(true);
-        }
-        return online;
-      });
-    }, 6000);
-  };
-
-  // On page load, show the launch prompt immediately (no auto-launch - requires user click)
-  // Browsers block protocol prompts that aren't triggered by user gestures
 
 
 
@@ -560,87 +519,77 @@ function StepperUploadView({ onUploadComplete }) {
         exit={{ opacity: 0, scale: 0.96 }}
         className="flex flex-col items-center text-center py-6 space-y-5 animate-fade-in"
       >
-        <div className="relative p-4 bg-red-500/10 rounded-full border border-red-500/20">
-          <Database className="w-8 h-8 text-red-400" />
-          <div className="absolute bottom-1 right-1 w-3 h-3 bg-red-500 border-2 border-[#060913] rounded-full animate-pulse" />
+        <div className="relative p-4 bg-blue-500/10 rounded-full border border-blue-500/20">
+          <Database className="w-8 h-8 text-blue-400" />
+          <div className="absolute bottom-1 right-1 w-3 h-3 bg-yellow-500 border-2 border-[#060913] rounded-full animate-pulse" />
         </div>
         
         <div>
-          <h2 className="text-lg font-bold text-white mb-1">Local Node Connection Required</h2>
+          <h2 className="text-lg font-bold text-white mb-1">Start Your Local Node</h2>
           <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-            DropVault hosts files directly from your computer. You must run the local storage server to continue.
+            DropVault hosts files directly from your computer. Open a terminal and run the command below to start the server.
           </p>
         </div>
 
-        {/* Warning if app launch was blocked or failed */}
-        {launchFailed && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-left space-y-3"
-          >
-            <div className="flex items-center gap-2 text-red-400 font-bold text-xs">
-              <ShieldAlert className="w-4 h-4 shrink-0 animate-pulse" />
-              <span>Launch Blocked — Action Required</span>
+        {/* Primary Command - Large & Prominent */}
+        <div className="w-full bg-[#0e1320] p-5 rounded-2xl border border-white/5 text-left space-y-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Play className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Run in Terminal</span>
             </div>
-            <p className="text-[11px] text-red-200/80 leading-relaxed font-medium">
-              Your browser has permanently blocked the DropVault protocol launcher. The app cannot function without this permission. To fix this:
-            </p>
-            <div className="space-y-1.5 text-[10px] text-red-200/70 leading-relaxed">
-              <div className="flex gap-2 items-start">
-                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">1</span>
-                <span>Click the <strong className="text-red-300">lock icon</strong> (or tune icon) in your browser's address bar</span>
-              </div>
-              <div className="flex gap-2 items-start">
-                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">2</span>
-                <span>Go to <strong className="text-red-300">Site settings</strong></span>
-              </div>
-              <div className="flex gap-2 items-start">
-                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">3</span>
-                <span>Find <strong className="text-red-300">Protocol handlers</strong> and set to <strong className="text-red-300">Allow</strong>, then refresh</span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText('chrome://settings/handlers');
-                toast.showToast("Settings URL copied! Paste in address bar.");
-              }}
-              className="w-full mt-1 py-2 rounded-lg bg-red-500/15 border border-red-500/25 text-[10px] font-bold text-red-300 hover:bg-red-500/25 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Copy className="w-3 h-3" />
-              <span>Copy Settings URL: chrome://settings/handlers</span>
-            </button>
-          </motion.div>
-        )}
-
-
-        {/* Installation Setup Command Box */}
-        <div className="w-full bg-[#0e1320] p-4.5 rounded-2xl border border-white/5 text-left space-y-3">
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">First-Time Setup (Terminal)</span>
             <span className="text-[10px] text-slate-500 leading-normal block">
-              Run this command in your computer's terminal to install the server and link the browser launcher:
+              Open PowerShell, CMD, or any terminal and paste this command:
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-2 p-2 px-3 rounded-xl bg-[#0b0f19] border border-white/5">
-            <code className="text-xs text-blue-350 font-mono select-all truncate">
-              npx dropvault-node --setup
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`npx dropvault-node --port ${nodePort}`);
+              setCmdCopied(true);
+              toast.showToast("Command copied! Paste it in your terminal.");
+              setTimeout(() => setCmdCopied(false), 3000);
+            }}
+            className={`w-full flex items-center justify-between gap-2 p-3.5 px-4 rounded-xl border transition-all cursor-pointer group ${
+              cmdCopied 
+                ? 'bg-blue-500/10 border-blue-500/30' 
+                : 'bg-[#0b0f19] border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5'
+            }`}
+          >
+            <code className="text-sm text-blue-300 font-mono font-semibold select-all truncate">
+              npx dropvault-node --port {nodePort}
             </code>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText("npx dropvault-node --setup");
-                toast.showToast("Command copied!");
-              }}
-              className="p-1.5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all cursor-pointer shrink-0"
-              title="Copy Command"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+            <div className={`p-1.5 rounded-lg shrink-0 transition-all ${
+              cmdCopied 
+                ? 'bg-blue-500/20 text-blue-300' 
+                : 'bg-white/5 border border-white/10 text-slate-400 group-hover:text-white group-hover:bg-white/10'
+            }`}>
+              {cmdCopied ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </div>
+          </button>
+
+          {/* Quick Steps */}
+          <div className="space-y-2 pt-2 border-t border-white/5">
+            <div className="flex gap-2.5 items-start">
+              <span className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">1</span>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Copy the command above (click it)</p>
+            </div>
+            <div className="flex gap-2.5 items-start">
+              <span className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">2</span>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Open a terminal on your computer and paste it</p>
+            </div>
+            <div className="flex gap-2.5 items-start">
+              <span className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">3</span>
+              <p className="text-[11px] text-slate-400 leading-relaxed">This page will <strong className="text-blue-300">automatically connect</strong> once the server starts</p>
+            </div>
           </div>
         </div>
 
-        {/* Node Port and Polling Status */}
+        {/* Connection Port & Status */}
         <div className="w-full bg-[#0e1320] p-5 rounded-2xl border border-white/5 space-y-4 text-left">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col">
@@ -656,20 +605,11 @@ function StepperUploadView({ onUploadComplete }) {
             />
           </div>
           
-          <div className="flex items-center gap-2.5 text-[10px] text-slate-550 font-mono border-t border-white/5 pt-4">
+          <div className="flex items-center gap-2.5 text-[10px] font-mono border-t border-white/5 pt-4">
             <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 shrink-0" />
-            <span>Verifying node status on http://localhost:{nodePort}/api ...</span>
+            <span className="text-slate-500">Waiting for node on <span className="text-blue-400">localhost:{nodePort}</span> ...</span>
           </div>
         </div>
-
-        {/* Launcher Trigger Button */}
-        <button
-          onClick={launchLocalNode}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/15 text-white transition-all hover:scale-[1.01]"
-        >
-          <span>Launch Local Node</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
       </motion.div>
     );
   }
