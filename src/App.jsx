@@ -339,7 +339,30 @@ function StepperUploadView({ onUploadComplete }) {
 
   const launchLocalNode = () => {
     setLaunchFailed(false);
-    window.location.href = `dropvault://launch?port=${nodePort}&t=${Date.now()}`;
+    const protocolUrl = `dropvault://launch?port=${nodePort}&t=${Date.now()}`;
+    
+    // Use a temporary hidden iframe to trigger the protocol
+    // This bypasses the browser's cached "block" for window.location.href
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    // Try iframe navigation first
+    try {
+      iframe.contentWindow.location.href = protocolUrl;
+    } catch (e) {
+      // Fallback: use window.open with a brief window
+      const w = window.open(protocolUrl, '_blank');
+      if (w) {
+        setTimeout(() => w.close(), 500);
+      }
+    }
+    
+    // Clean up iframe after a short delay
+    setTimeout(() => {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 2000);
+
     toast.showToast('Launching DropVault Node...');
     
     // Start verification timer to detect if launch is blocked/cancelled
@@ -353,16 +376,9 @@ function StepperUploadView({ onUploadComplete }) {
     }, 6000);
   };
 
-  // Auto-launch on load if node is offline
-  useEffect(() => {
-    if (!checkingNode && !nodeOnline && !hasAutoLaunched) {
-      setHasAutoLaunched(true);
-      const timer = setTimeout(() => {
-        launchLocalNode();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [checkingNode, nodeOnline, hasAutoLaunched]);
+  // On page load, show the launch prompt immediately (no auto-launch - requires user click)
+  // Browsers block protocol prompts that aren't triggered by user gestures
+
 
 
   // Node health polling effect
@@ -561,15 +577,39 @@ function StepperUploadView({ onUploadComplete }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-left space-y-2"
+            className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-left space-y-3"
           >
             <div className="flex items-center gap-2 text-red-400 font-bold text-xs">
               <ShieldAlert className="w-4 h-4 shrink-0 animate-pulse" />
-              <span>Launch Blocked or Pending</span>
+              <span>Launch Blocked — Action Required</span>
             </div>
             <p className="text-[11px] text-red-200/80 leading-relaxed font-medium">
-              DropVault requires permission to launch the local node server. If you blocked this action, the application **cannot function**. Please refresh the page and allow the request, or click "Launch Local Node" and grant permission.
+              Your browser has permanently blocked the DropVault protocol launcher. The app cannot function without this permission. To fix this:
             </p>
+            <div className="space-y-1.5 text-[10px] text-red-200/70 leading-relaxed">
+              <div className="flex gap-2 items-start">
+                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">1</span>
+                <span>Click the <strong className="text-red-300">lock icon</strong> (or tune icon) in your browser's address bar</span>
+              </div>
+              <div className="flex gap-2 items-start">
+                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">2</span>
+                <span>Go to <strong className="text-red-300">Site settings</strong></span>
+              </div>
+              <div className="flex gap-2 items-start">
+                <span className="w-4 h-4 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center text-[9px] font-bold text-red-400 shrink-0 mt-0.5">3</span>
+                <span>Find <strong className="text-red-300">Protocol handlers</strong> and set to <strong className="text-red-300">Allow</strong>, then refresh</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('chrome://settings/handlers');
+                toast.showToast("Settings URL copied! Paste in address bar.");
+              }}
+              className="w-full mt-1 py-2 rounded-lg bg-red-500/15 border border-red-500/25 text-[10px] font-bold text-red-300 hover:bg-red-500/25 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Copy className="w-3 h-3" />
+              <span>Copy Settings URL: chrome://settings/handlers</span>
+            </button>
           </motion.div>
         )}
 
