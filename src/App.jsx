@@ -545,8 +545,19 @@ function StepperUploadView({ onUploadComplete }) {
 
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`npx -y dropvault-node --port ${nodePort}`);
+              const cmd = `npx -y dropvault-node --port ${nodePort}`;
+              navigator.clipboard.writeText(cmd);
               setCmdCopied(true);
+              
+              // Silently try to open a terminal (no error if blocked)
+              try {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                iframe.contentWindow.location.href = 'ms-terminal:';
+                setTimeout(() => { try { iframe.remove(); } catch(e) {} }, 1500);
+              } catch(e) { /* silently ignore - user will paste manually */ }
+
               toast.showToast("Command copied! Paste it in your terminal.");
               setTimeout(() => setCmdCopied(false), 3000);
             }}
