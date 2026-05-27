@@ -545,7 +545,7 @@ function StepperUploadView({ onUploadComplete }) {
 
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`npx dropvault-node --port ${nodePort}`);
+              navigator.clipboard.writeText(`npx -y dropvault-node --port ${nodePort}`);
               setCmdCopied(true);
               toast.showToast("Command copied! Paste it in your terminal.");
               setTimeout(() => setCmdCopied(false), 3000);
@@ -557,7 +557,7 @@ function StepperUploadView({ onUploadComplete }) {
             }`}
           >
             <code className="text-sm text-blue-300 font-mono font-semibold select-all truncate">
-              npx dropvault-node --port {nodePort}
+              npx -y dropvault-node --port {nodePort}
             </code>
             <div className={`p-1.5 rounded-lg shrink-0 transition-all ${
               cmdCopied 
