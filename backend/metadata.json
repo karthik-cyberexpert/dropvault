@@ -1,0 +1,18 @@
+[
+  {
+    "id": "eef7a4a6-3507-40ce-9524-543e6c1401d8",
+    "files": [
+      {
+        "filename": "invoice-coolingpad.pdf",
+        "savedName": "1779902338848-910859641-invoice-coolingpad.pdf",
+        "mimetype": "application/pdf",
+        "size": 112336
+      }
+    ],
+    "createdAt": "2026-05-27T17:18:58.862Z",
+    "expiresAt": "2026-05-28T17:18:58.862Z",
+    "password": "123456",
+    "oneTime": true,
+    "downloadCount": 0
+  }
+]
