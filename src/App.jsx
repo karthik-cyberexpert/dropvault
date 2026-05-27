@@ -28,7 +28,7 @@ export const getApiBase = () => {
   if (savedNode) {
     return `${savedNode}/api`;
   }
-  return 'http://localhost:15299/api';
+  return 'http://127.0.0.1:15299/api';
 };
 
 export default function App() {
@@ -545,7 +545,7 @@ function StepperUploadView({ onUploadComplete }) {
 
           <button
             onClick={() => {
-              const cmd = `npx -y dropvault-node --port ${nodePort}`;
+              const cmd = `npx -y dropvault-node@latest --port ${nodePort}`;
               navigator.clipboard.writeText(cmd);
               setCmdCopied(true);
               
@@ -568,7 +568,7 @@ function StepperUploadView({ onUploadComplete }) {
             }`}
           >
             <code className="text-sm text-blue-300 font-mono font-semibold select-all truncate">
-              npx -y dropvault-node --port {nodePort}
+              npx -y dropvault-node@latest --port {nodePort}
             </code>
             <div className={`p-1.5 rounded-lg shrink-0 transition-all ${
               cmdCopied 

@@ -1,6 +1,6 @@
 {
   "name": "dropvault-node",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "DropVault backend API server",
   "main": "server.js",
   "bin": {

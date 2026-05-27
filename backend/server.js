@@ -17,6 +17,16 @@ const app = express();
 const PORT = process.env.PORT || 15299;
 
 // Middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Private-Network', 'true');
+  res.header('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Access-Control-Request-Private-Network');
+    return res.status(200).end();
+  }
+  next();
+});
 app.use(cors());
 app.use(express.json());
 
@@ -365,7 +375,7 @@ setInterval(() => {
   }
 }, 60000);
 
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`DropVault backend server running on port ${PORT}`);
   try {
     const tunnel = await localtunnel({ port: PORT });
