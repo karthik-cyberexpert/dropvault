@@ -339,7 +339,7 @@ function StepperUploadView({ onUploadComplete }) {
 
   const launchLocalNode = () => {
     setLaunchFailed(false);
-    window.location.href = `dropvault://launch?port=${nodePort}`;
+    window.location.href = `dropvault://launch?port=${nodePort}&t=${Date.now()}`;
     toast.showToast('Launching DropVault Node...');
     
     // Start verification timer to detect if launch is blocked/cancelled
@@ -372,7 +372,7 @@ function StepperUploadView({ onUploadComplete }) {
 
     const pollHealth = async () => {
       try {
-        const res = await axios.get(`${getApiBase()}/health`);
+        const res = await axios.get(`${getApiBase()}/health`, { timeout: 1000 });
         if (res.data && res.data.status === 'ok') {
           if (active) {
             setNodeOnline(true);
