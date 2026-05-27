@@ -317,6 +317,8 @@ function StepperUploadView({ onUploadComplete }) {
   // Local Node Connection states
   const [nodeOnline, setNodeOnline] = useState(false);
   const [checkingNode, setCheckingNode] = useState(true);
+  const [hasAutoLaunched, setHasAutoLaunched] = useState(false);
+  const [launchFailed, setLaunchFailed] = useState(false);
   const [nodePort, setNodePort] = useState(() => {
     const saved = localStorage.getItem('dropvault_node_url');
     if (saved) {
@@ -336,9 +338,32 @@ function StepperUploadView({ onUploadComplete }) {
   };
 
   const launchLocalNode = () => {
+    setLaunchFailed(false);
     window.location.href = `dropvault://launch?port=${nodePort}`;
     toast.showToast('Launching DropVault Node...');
+    
+    // Start verification timer to detect if launch is blocked/cancelled
+    setTimeout(() => {
+      setNodeOnline(online => {
+        if (!online) {
+          setLaunchFailed(true);
+        }
+        return online;
+      });
+    }, 6000);
   };
+
+  // Auto-launch on load if node is offline
+  useEffect(() => {
+    if (!checkingNode && !nodeOnline && !hasAutoLaunched) {
+      setHasAutoLaunched(true);
+      const timer = setTimeout(() => {
+        launchLocalNode();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [checkingNode, nodeOnline, hasAutoLaunched]);
+
 
   // Node health polling effect
   useEffect(() => {
@@ -530,6 +555,24 @@ function StepperUploadView({ onUploadComplete }) {
             DropVault hosts files directly from your computer. You must run the local storage server to continue.
           </p>
         </div>
+
+        {/* Warning if app launch was blocked or failed */}
+        {launchFailed && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-left space-y-2"
+          >
+            <div className="flex items-center gap-2 text-red-400 font-bold text-xs">
+              <ShieldAlert className="w-4 h-4 shrink-0 animate-pulse" />
+              <span>Launch Blocked or Pending</span>
+            </div>
+            <p className="text-[11px] text-red-200/80 leading-relaxed font-medium">
+              DropVault requires permission to launch the local node server. If you blocked this action, the application **cannot function**. Please refresh the page and allow the request, or click "Launch Local Node" and grant permission.
+            </p>
+          </motion.div>
+        )}
+
 
         {/* Installation Setup Command Box */}
         <div className="w-full bg-[#0e1320] p-4.5 rounded-2xl border border-white/5 text-left space-y-3">
